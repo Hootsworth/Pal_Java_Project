@@ -1,0 +1,146 @@
+/* 
+  Modern Editorial Aesthetic
+  Clean typography, stark contrast, spacious layout, minimalist borders 
+*/
+
+.root {
+    -fx-background-color: #FAFAFA;
+    -fx-font-family: "Segoe UI", "Inter", sans-serif;
+    -fx-text-fill: #111111;
+}
+
+.heading {
+    -fx-font-family: "Georgia", "Playfair Display", serif;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #000000;
+}
+
+.subheading {
+    -fx-font-family: "Segoe UI", "Inter", sans-serif;
+    -fx-font-size: 14px;
+    -fx-text-fill: #666666;
+    -fx-letter-spacing: 1px;
+    -fx-text-transform: uppercase;
+}
+
+.body-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #333333;
+    -fx-line-spacing: 5px;
+}
+
+/* Card Styling */
+.editorial-card {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #EEEEEE;
+    -fx-border-width: 1px;
+    -fx-padding: 24px;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.03), 10, 0, 0, 5);
+}
+
+/* Inputs */
+.text-field, .password-field, .text-area {
+    -fx-background-color: transparent;
+    -fx-border-color: #DDDDDD;
+    -fx-border-width: 0 0 1px 0;
+    -fx-prompt-text-fill: #AAAAAA;
+    -fx-font-size: 14px;
+    -fx-padding: 8px 0px;
+}
+.text-field:focused, .password-field:focused, .text-area:focused {
+    -fx-border-color: #111111;
+}
+.text-area {
+    -fx-border-width: 1px;
+    -fx-padding: 8px;
+}
+
+/* Buttons */
+.button-primary {
+    -fx-background-color: #111111;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-padding: 12px 24px;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-cursor: hand;
+}
+.button-primary:hover {
+    -fx-background-color: #333333;
+}
+
+.button-outline {
+    -fx-background-color: transparent;
+    -fx-text-fill: #111111;
+    -fx-border-color: #111111;
+    -fx-border-width: 1px;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 8px 16px;
+    -fx-cursor: hand;
+}
+.button-outline:hover {
+    -fx-background-color: #FAFAFA;
+}
+
+/* Navigation List */
+.nav-list {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+.nav-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #666666;
+    -fx-font-size: 14px;
+    -fx-padding: 12px 24px;
+    -fx-cursor: hand;
+}
+.nav-list .list-cell:selected {
+    -fx-background-color: transparent;
+    -fx-text-fill: #111111;
+    -fx-font-weight: bold;
+    -fx-border-color: #111111;
+    -fx-border-width: 0 0 0 3px;
+}
+.nav-list .list-cell:hover {
+    -fx-text-fill: #111111;
+}
+
+/* General Layouts */
+.sidebar {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #EEEEEE;
+    -fx-border-width: 0 1px 0 0;
+}
+.topbar {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #EEEEEE;
+    -fx-border-width: 0 0 1px 0;
+}
+
+/* Phase 3: Marketplace */
+.marketplace-badge {
+    -fx-background-color: #FFF9C4;
+    -fx-text-fill: #F57F17;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 2px 8px;
+    -fx-background-radius: 10px;
+}
+
+.price-tag {
+    -fx-font-family: "Georgia", serif;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #111111;
+}
+
+.filter-bar {
+    -fx-background-color: transparent;
+    -fx-padding: 10px 0;
+    -fx-spacing: 15px;
+}

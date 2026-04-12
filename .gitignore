@@ -1,0 +1,5 @@
+/out
+/javafx-sdk
+*.class
+.DS_Store
+/.vscode
