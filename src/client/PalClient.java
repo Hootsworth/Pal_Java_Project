@@ -1,11 +1,8 @@
 package client;
 
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.stage.Stage;
-import model.Packet;
 import model.User;
 import ui.EditorialLogin;
 import ui.EditorialMain;

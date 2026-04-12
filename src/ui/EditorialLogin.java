@@ -187,6 +187,9 @@ public class EditorialLogin extends BorderPane implements ServerConnection.Packe
                     setStatus("Error: " + packet.getPayload());
                     setInputsEnabled(true);
                 }
+                default -> {
+                    // Ignore unrelated packets like NEW_POST on the login screen
+                }
             }
         });
     }

@@ -217,6 +217,9 @@ public class EditorialChat extends VBox {
                 String rejecter = data.length > 2 ? data[2] : "Unknown";
                 showStatus("Transfer rejected by " + rejecter + ": " + data[1]);
             }
+            default -> {
+                // Safely ignore all non-file related packets
+            }
         }
     }
 

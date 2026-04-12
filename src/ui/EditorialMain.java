@@ -135,6 +135,9 @@ public class EditorialMain extends BorderPane implements ServerConnection.Packet
                     Alert a = new Alert(Alert.AlertType.ERROR, packet.getPayload().toString());
                     a.show();
                 }
+                default -> {
+                    // Ignore background packets intended for other controllers
+                }
             }
         });
     }

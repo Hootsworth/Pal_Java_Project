@@ -38,8 +38,7 @@ public class DiscoveryClient extends Thread {
                 if (message.startsWith("PAL_SERVER|")) {
                     String[] parts = message.split("\\|");
                     if (parts.length >= 3) {
-                        String hostname = parts[1];
-                        // If hostname is local, actually use the sender's IP for better reliability
+                        // Use the sender's IP for better reliability
                         String ip = packet.getAddress().getHostAddress();
                         Platform.runLater(() -> onDiscovered.accept(new String[]{ip, parts[2]}));
                     }

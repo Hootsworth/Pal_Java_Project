@@ -45,7 +45,7 @@ public class EditorialFeed extends VBox {
         Button searchMusicBtn = new Button("SEARCH iTUNES");
         searchMusicBtn.getStyleClass().add("button-outline");
         searchMusicBtn.setOnAction(e -> {
-            new EditorialMusicSearch(connection, mainListener).show();
+            new EditorialMusicSearch(this.connection, this.mainListener).show();
         });
 
         HBox actions = new HBox(publishBtn, searchMusicBtn);
@@ -64,12 +64,12 @@ public class EditorialFeed extends VBox {
 
         publishBtn.setOnAction(e -> {
             if (!composer.getText().isEmpty()) {
-                Post p = new Post(user.getUsername(), composer.getText(), 
+                Post p = new Post(this.user.getUsername(), composer.getText(), 
                     marketToggle.isSelected() ? Post.PostType.MARKETPLACE : Post.PostType.SOCIAL);
                 if (marketToggle.isSelected() && !priceField.getText().isEmpty()) {
                     p.setMetadata("price", priceField.getText());
                 }
-                connection.send(new Packet(Packet.Type.NEW_POST, p));
+                this.connection.send(new Packet(Packet.Type.NEW_POST, p));
                 composer.clear();
                 priceField.clear();
                 marketToggle.setSelected(false);
