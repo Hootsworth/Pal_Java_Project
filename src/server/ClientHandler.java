@@ -54,6 +54,9 @@ public class ClientHandler implements Runnable {
             case GET_FEED -> send(new Packet(Packet.Type.FEED_RESPONSE, server.getGlobalFeed()));
             case LIKE_POST -> handleLike(packet);
             case REACT_POST -> handleReact(packet);
+            case REPLY_POST -> handleReply(packet);
+            case REPORT_POST -> handleReport(packet);
+            case SHARE_POST -> handleShare(packet);
 
             // Friends
             case FRIEND_REQUEST -> handleFriendRequest(packet);
@@ -160,6 +163,28 @@ public class ClientHandler implements Runnable {
         if (data.length == 2) {
             server.reactToPost(data[0], data[1], currentUser.getUsername());
         }
+    }
+
+    // ── Phase 4: Social Features ──
+
+    private void handleReply(Packet packet) {
+        if (currentUser == null) return;
+        Post reply = (Post) packet.getPayload();
+        reply = new Post(currentUser.getUsername(), reply.getContent());
+        reply.setParentPostId(((Post) packet.getPayload()).getParentPostId());
+        server.addReply(reply);
+    }
+
+    private void handleReport(Packet packet) {
+        if (currentUser == null) return;
+        String[] data = (String[]) packet.getPayload(); // {postId, username, reason}
+        server.reportPost(data[0], currentUser.getUsername(), data.length > 2 ? data[2] : "No reason");
+    }
+
+    private void handleShare(Packet packet) {
+        if (currentUser == null) return;
+        String postId = (String) packet.getPayload();
+        server.sharePost(postId, currentUser.getUsername());
     }
 
     // ── Friends ──

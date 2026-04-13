@@ -19,6 +19,11 @@ public class Packet implements Serializable {
         // Reactions (Phase 2)
         REACT_POST,
 
+        // Social Features (Phase 4)
+        REPLY_POST,                 // payload: Post (with parentPostId set)
+        REPORT_POST,                // payload: String[] {postId, reporterUsername, reason}
+        SHARE_POST,                 // payload: String (postId)
+
         // Friends
         FRIEND_REQUEST, FRIEND_ACCEPT, FRIEND_DECLINE, GET_FRIENDS, FRIENDS_RESPONSE,
         GET_PENDING, PENDING_RESPONSE,

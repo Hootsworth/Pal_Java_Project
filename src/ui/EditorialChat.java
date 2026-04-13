@@ -1,16 +1,22 @@
 package ui;
 
 import client.ServerConnection;
+import animatefx.animation.SlideInRight;
+import animatefx.animation.SlideInLeft;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import model.*;
 import client.FileTransferManager;
+import org.kordamp.ikonli.javafx.FontIcon;
+
 import java.io.File;
 import java.net.InetAddress;
-
 import java.util.List;
 
 public class EditorialChat extends VBox {
@@ -21,6 +27,7 @@ public class EditorialChat extends VBox {
     private final TextField inputField;
     private final ListView<String> onlineList;
     private String activeChatUser = null;
+    private final ScrollPane scroll;
     
     private final java.util.Map<String, File> pendingFiles = new java.util.HashMap<>();
 
@@ -34,49 +41,82 @@ public class EditorialChat extends VBox {
 
         HBox split = new HBox(20);
         
-        // Chat Area
-        VBox chatBox = new VBox(10);
-        chatBox.getStyleClass().add("editorial-card");
-        HBox.setHgrow(chatBox, Priority.ALWAYS);
-
-        messageContainer = new VBox(10);
-
         // Active Users Sidebar
-        VBox usersBox = new VBox(10);
-        usersBox.setPrefWidth(200);
+        VBox usersBox = new VBox(15);
+        usersBox.setPrefWidth(220);
         usersBox.getStyleClass().add("editorial-card");
+        HBox uHeader = new HBox(8);
+        uHeader.setAlignment(Pos.CENTER_LEFT);
+        FontIcon usersIcon = new FontIcon("mdi2a-account-group-outline");
+        usersIcon.setIconColor(Color.web("#8B949E"));
         Label uTitle = new Label("Active Users");
         uTitle.getStyleClass().add("subheading");
+        uHeader.getChildren().addAll(usersIcon, uTitle);
+
         onlineList = new ListView<>();
         onlineList.getStyleClass().add("nav-list");
-        onlineList.getSelectionModel().selectedItemProperty().addListener((obs, o, n) -> {
-            if (n != null) {
-                activeChatUser = n;
-                messageContainer.getChildren().clear();
-                connection.send(new Packet(Packet.Type.CHAT_HISTORY_REQUEST, n));
+        onlineList.setCellFactory(lv -> new ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    setText(item);
+                    FontIcon dot = new FontIcon("mdi2c-circle-medium");
+                    dot.setIconColor(Color.web("#10B981")); // green dot
+                    setGraphic(dot);
+                }
             }
         });
-        usersBox.getChildren().addAll(uTitle, onlineList);
-        ScrollPane scroll = new ScrollPane(messageContainer);
-        scroll.setFitToWidth(true);
-        scroll.setPrefHeight(400);
-        scroll.setStyle("-fx-background-color: transparent; -fx-border-color: transparent;");
-
-        HBox inputBox = new HBox(10);
         inputField = new TextField();
         inputField.setPromptText("Type a message or /wiki query...");
         inputField.getStyleClass().add("text-field");
         HBox.setHgrow(inputField, Priority.ALWAYS);
-        Button sendBtn = new Button("SEND");
-        sendBtn.getStyleClass().add("button-primary");
-        sendBtn.setOnAction(e -> sendMessage());
-        inputField.setOnAction(e -> sendMessage());
+        inputField.setDisable(true); // Disable until user selected
 
-        Button fileBtn = new Button("FILE");
+        messageContainer = new VBox(12);
+        scroll = new ScrollPane(messageContainer);
+        scroll.setFitToWidth(true);
+        scroll.setPrefHeight(450);
+        scroll.getStyleClass().add("scroll-pane");
+
+        Button fileBtn = new Button("", new FontIcon("mdi2p-paperclip"));
         fileBtn.getStyleClass().add("button-outline");
+        fileBtn.setStyle("-fx-border-radius: 50%; -fx-background-radius: 50%; -fx-padding: 8px 12px;");
         fileBtn.setOnAction(e -> initiateFileTransfer());
+        fileBtn.setDisable(true);
 
-        inputBox.getChildren().addAll(inputField, fileBtn, sendBtn);
+        Button sendBtn = new Button("", new FontIcon("mdi2s-send"));
+        sendBtn.getStyleClass().add("button-primary");
+        sendBtn.setStyle("-fx-border-radius: 50%; -fx-background-radius: 50%; -fx-padding: 8px 12px;");
+        sendBtn.setOnAction(e -> sendMessage());
+        sendBtn.setDisable(true);
+
+        onlineList.getSelectionModel().selectedItemProperty().addListener((obs, o, n) -> {
+            boolean hasSelected = (n != null);
+            if (hasSelected) {
+                activeChatUser = n;
+                messageContainer.getChildren().clear();
+                connection.send(new Packet(Packet.Type.CHAT_HISTORY_REQUEST, n));
+                inputField.setPromptText("Message " + n + "...");
+            }
+            inputField.setDisable(!hasSelected);
+            fileBtn.setDisable(!hasSelected);
+            sendBtn.setDisable(!hasSelected);
+        });
+
+        usersBox.getChildren().addAll(uHeader, onlineList);
+
+        VBox chatBox = new VBox(15);
+        chatBox.getStyleClass().add("editorial-card");
+        HBox.setHgrow(chatBox, Priority.ALWAYS);
+
+        HBox inputBox = new HBox(10);
+        inputBox.setAlignment(Pos.CENTER_LEFT);
+        inputBox.getChildren().addAll(fileBtn, inputField, sendBtn);
+        
         chatBox.getChildren().addAll(scroll, inputBox);
 
         split.getChildren().addAll(usersBox, chatBox);
@@ -87,13 +127,12 @@ public class EditorialChat extends VBox {
         if (activeChatUser == null || inputField.getText().isEmpty()) return;
         String text = inputField.getText();
         
-        // Slash commands
         if (text.startsWith("/wiki ")) {
             connection.send(new Packet(Packet.Type.WIKI_LOOKUP_REQUEST, text.substring(6)));
         } else {
             Message msg = new Message(user.getUsername(), activeChatUser, text);
             connection.send(new Packet(Packet.Type.CHAT_MESSAGE, msg));
-            receiveMessage(msg); // echo locally
+            receiveMessage(msg);
         }
         inputField.clear();
     }
@@ -117,30 +156,56 @@ public class EditorialChat extends VBox {
                 }
             }
 
-            VBox bubble = new VBox(5);
-            Label lbl = new Label(msg.getFrom() + ": " + rawText);
-            lbl.getStyleClass().add("body-text");
-            bubble.getChildren().add(lbl);
+            VBox bubbleBox = new VBox(4);
+            boolean isMine = msg.getFrom().equals(user.getUsername());
             
+            Label lbl = new Label(rawText);
+            lbl.getStyleClass().add(isMine ? "chat-bubble-sent" : "chat-bubble-received");
+            lbl.setWrapText(true);
+            
+            Label timeLbl = new Label(msg.getFormattedTime());
+            timeLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: #8B949E;");
+
             if (previewUrl != null) {
                 Button playBtn = createPlayButton(previewUrl);
-                bubble.getChildren().add(playBtn);
+                VBox mediaBox = new VBox(5, lbl, playBtn);
+                bubbleBox.getChildren().addAll(mediaBox, timeLbl);
+            } else {
+                bubbleBox.getChildren().addAll(lbl, timeLbl);
+            }
+
+            HBox row = new HBox(bubbleBox);
+            if (isMine) {
+                row.setAlignment(Pos.CENTER_RIGHT);
+                bubbleBox.setAlignment(Pos.CENTER_RIGHT);
+            } else {
+                row.setAlignment(Pos.CENTER_LEFT);
+                bubbleBox.setAlignment(Pos.CENTER_LEFT);
             }
             
-            messageContainer.getChildren().add(bubble);
+            messageContainer.getChildren().add(row);
+
+            // Animate entrance
+            if (isMine) {
+                new SlideInRight(row).setSpeed(2.0).play();
+            } else {
+                new SlideInLeft(row).setSpeed(2.0).play();
+            }
+            
+            javafx.application.Platform.runLater(() -> scroll.setVvalue(1.0));
         }
     }
 
     private Button createPlayButton(String url) {
-        Button playObj = new Button("▶ Play Preview");
+        Button playObj = new Button("Play Preview", new FontIcon("mdi2p-play-circle"));
         playObj.getStyleClass().add("button-outline");
-        playObj.setStyle("-fx-text-fill: #6c63ff; -fx-border-color: #6c63ff; -fx-font-size: 10px; -fx-padding: 4px 8px;");
+        playObj.setStyle("-fx-border-radius: 20px; -fx-background-radius: 20px; -fx-font-size: 11px;");
         
         MediaPlayer player = null;
         try {
             player = new MediaPlayer(new Media(url));
         } catch (Exception ex) {
-            playObj.setText("X Media Error");
+            playObj.setText("Media Error");
             playObj.setDisable(true);
             return playObj;
         }
@@ -149,16 +214,19 @@ public class EditorialChat extends VBox {
         playObj.setOnAction(e -> {
             if (mp.getStatus() == MediaPlayer.Status.PLAYING) {
                 mp.pause();
-                playObj.setText("▶ Play Preview");
+                playObj.setText("Play Preview");
+                playObj.setGraphic(new FontIcon("mdi2p-play-circle"));
             } else {
                 mp.play();
-                playObj.setText("⏸ Pause");
+                playObj.setText("Pause");
+                playObj.setGraphic(new FontIcon("mdi2p-pause-circle"));
             }
         });
 
         mp.setOnEndOfMedia(() -> {
             mp.stop();
-            playObj.setText("▶ Play Preview");
+            playObj.setText("Play Preview");
+            playObj.setGraphic(new FontIcon("mdi2p-play-circle"));
         });
 
         return playObj;
@@ -167,9 +235,10 @@ public class EditorialChat extends VBox {
     public void loadHistory(List<Message> messages) {
         messageContainer.getChildren().clear();
         for (Message m : messages) receiveMessage(m);
+        javafx.application.Platform.runLater(() -> scroll.setVvalue(1.0));
     }
 
-    // ── Phase 1: File Transfer Logic ──
+    // ── File Transfer Logic ──
 
     private void initiateFileTransfer() {
         if (activeChatUser == null) return;
@@ -180,7 +249,7 @@ public class EditorialChat extends VBox {
             FileMetadata meta = new FileMetadata(file.getName(), file.length(), user.getUsername(), activeChatUser);
             pendingFiles.put(activeChatUser, file);
             connection.send(new Packet(Packet.Type.FILE_OFFER, meta));
-            showStatus("Waiting for " + activeChatUser + " to accept...");
+            showSystemMessage("Waiting for " + activeChatUser + " to accept your file...", "mdi2c-clock-outline");
         }
     }
 
@@ -207,7 +276,7 @@ public class EditorialChat extends VBox {
                 }
             }
             case FILE_ACCEPT -> {
-                String[] data = (String[]) packet.getPayload(); // [original_sender, ip:port, receiver_who_accepted]
+                String[] data = (String[]) packet.getPayload(); 
                 String[] target = data[1].split(":");
                 String receiverName = data.length > 2 ? data[2] : activeChatUser;
                 handleFileAcceptance(receiverName, target[0], Integer.parseInt(target[1]));
@@ -215,11 +284,9 @@ public class EditorialChat extends VBox {
             case FILE_REJECT -> {
                 String[] data = (String[]) packet.getPayload();
                 String rejecter = data.length > 2 ? data[2] : "Unknown";
-                showStatus("Transfer rejected by " + rejecter + ": " + data[1]);
+                showSystemMessage("Transfer rejected by " + rejecter + ": " + data[1], "mdi2c-close-circle-outline");
             }
-            default -> {
-                // Safely ignore all non-file related packets
-            }
+            default -> {}
         }
     }
 
@@ -229,36 +296,42 @@ public class EditorialChat extends VBox {
                 try {
                     String ip = InetAddress.getLocalHost().getHostAddress();
                     connection.send(new Packet(Packet.Type.FILE_ACCEPT, new String[]{meta.getSender(), ip + ":" + port, user.getUsername()}));
-                    showStatus("Port discovered: " + port + ". Ready.");
+                    showSystemMessage("Port discovered: " + port + ". Ready to receive.", "mdi2l-lan-connect");
                 } catch (Exception e) {
-                    showStatus("Error detecting IP: " + e.getMessage());
+                    showSystemMessage("Error detecting IP: " + e.getMessage(), "mdi2a-alert-circle");
                 }
             },
-            prog -> showStatus("Receiving: " + (int)(prog * 100) + "%"),
-            () -> showStatus("Received: " + meta.getFileName()),
-            err -> showStatus("Error: " + err));
+            prog -> showSystemMessage("Receiving: " + (int)(prog * 100) + "%", "mdi2d-download"),
+            () -> showSystemMessage("Successfully received: " + meta.getFileName(), "mdi2c-check-circle-outline"),
+            err -> showSystemMessage("Error: " + err, "mdi2a-alert-circle"));
     }
     
-    private void showStatus(String text) {
+    private void showSystemMessage(String text, String iconCode) {
         javafx.application.Platform.runLater(() -> {
-            Label status = new Label("[System] " + text);
-            status.getStyleClass().add("body-text");
-            status.setStyle("-fx-text-fill: #6c63ff; -fx-font-style: italic;");
-            messageContainer.getChildren().add(status);
+            HBox box = new HBox(8);
+            box.setAlignment(Pos.CENTER);
+            FontIcon icon = new FontIcon(iconCode);
+            icon.setIconColor(Color.web("#58A6FF"));
+            Label status = new Label(text);
+            status.setStyle("-fx-text-fill: #8B949E; -fx-font-size: 12px; -fx-font-style: italic;");
+            box.getChildren().addAll(icon, status);
+            
+            messageContainer.getChildren().add(box);
+            scroll.setVvalue(1.0);
         });
     }
 
     private void handleFileAcceptance(String receiverName, String ip, int port) {
         File file = pendingFiles.get(receiverName);
         if (file != null) {
-            showStatus("Streaming " + file.getName() + " to " + receiverName + " at " + ip + ":" + port);
+            showSystemMessage("Streaming " + file.getName() + " to " + receiverName + "...", "mdi2u-upload");
             FileTransferManager.sendFile(file, ip, port, 
-                prog -> showStatus("Sending: " + (int)(prog * 100) + "%"),
-                () -> showStatus("Sent: " + file.getName()),
-                err -> showStatus("Send Error: " + err));
+                prog -> showSystemMessage("Sending: " + (int)(prog * 100) + "%", "mdi2u-upload"),
+                () -> showSystemMessage("Successfully sent: " + file.getName(), "mdi2c-check-circle-outline"),
+                err -> showSystemMessage("Send Error: " + err, "mdi2a-alert-circle"));
             pendingFiles.remove(receiverName);
         } else {
-            showStatus("Error: No pending file for " + receiverName);
+            showSystemMessage("Error: No pending file for " + receiverName, "mdi2a-alert-circle");
         }
     }
 }

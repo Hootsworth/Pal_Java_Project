@@ -3,13 +3,17 @@ package ui;
 import client.DiscoveryClient;
 import client.PalClient;
 import client.ServerConnection;
+import animatefx.animation.FadeIn;
+import animatefx.animation.Pulse;
+import animatefx.animation.SlideInUp;
+import javafx.animation.Animation;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import model.Packet;
 import model.User;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 public class EditorialLogin extends BorderPane implements ServerConnection.PacketListener {
 
@@ -36,8 +40,10 @@ public class EditorialLogin extends BorderPane implements ServerConnection.Packe
     private void startDiscovery() {
         discovery = new DiscoveryClient(data -> {
             if (hostField.getText().equals("localhost") || hostField.getText().isEmpty()) {
-                hostField.setText(data[0]);
-                setStatus("Discovered local server at " + data[0]);
+                Platform.runLater(() -> {
+                    hostField.setText(data[0]);
+                    setStatus("Discovered LAN server at " + data[0], "mdi2l-lan-connect");
+                });
             }
         });
         discovery.start();
@@ -46,64 +52,88 @@ public class EditorialLogin extends BorderPane implements ServerConnection.Packe
     private void initUI() {
         getStyleClass().add("root");
 
+        // Subtle gradient background
+        setStyle("-fx-background-color: linear-gradient(to bottom right, #0D1117, #161B22);");
+
         VBox centerBox = new VBox(40);
         centerBox.setAlignment(Pos.CENTER);
-        centerBox.setMaxWidth(400);
+        centerBox.setMaxWidth(450);
 
         // Header Title
         Label title = new Label("P A L");
         title.getStyleClass().add("heading");
-        Label subtitle = new Label("A modern editorial network.");
+        title.setStyle("-fx-font-size: 48px; -fx-letter-spacing: 5px;");
+        Label subtitle = new Label("The Premium Editorial Network");
         subtitle.getStyleClass().add("subheading");
 
-        VBox headerBox = new VBox(5, title, subtitle);
+        VBox headerBox = new VBox(10, title, subtitle);
         headerBox.setAlignment(Pos.CENTER);
 
         // Card containing inputs
-        VBox card = new VBox(20);
+        VBox card = new VBox(25);
         card.getStyleClass().add("editorial-card");
         
         hostField = new TextField("localhost");
-        hostField.setPromptText("Enter server IP (e.g., localhost)");
+        hostField.setPromptText("localhost");
         hostField.getStyleClass().add("text-field");
-
+        
         usernameField = new TextField();
-        usernameField.setPromptText("Enter your username");
+        usernameField.setPromptText("Username");
         usernameField.getStyleClass().add("text-field");
 
         passwordField = new PasswordField();
-        passwordField.setPromptText("Enter your password");
+        passwordField.setPromptText("Password");
         passwordField.getStyleClass().add("password-field");
 
-        statusLabel = new Label();
-        statusLabel.getStyleClass().add("subheading");
+        statusLabel = new Label("Ready");
+        statusLabel.getStyleClass().add("body-text");
+        statusLabel.setGraphic(new FontIcon("mdi2i-information-outline"));
 
         HBox btnBox = new HBox(15);
         btnBox.setAlignment(Pos.CENTER);
 
         loginBtn = new Button("LOGIN");
         loginBtn.getStyleClass().add("button-primary");
+        loginBtn.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(loginBtn, Priority.ALWAYS);
         loginBtn.setOnAction(e -> handleLogin());
 
         registerBtn = new Button("CREATE ACCOUNT");
         registerBtn.getStyleClass().add("button-outline");
+        registerBtn.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(registerBtn, Priority.ALWAYS);
         registerBtn.setOnAction(e -> handleRegister());
 
         btnBox.getChildren().addAll(loginBtn, registerBtn);
 
         card.getChildren().addAll(
-            new Label("Server Host") {{ getStyleClass().add("subheading"); }},
-            hostField,
-            new Label("Username") {{ getStyleClass().add("subheading"); }},
-            usernameField,
-            new Label("Password") {{ getStyleClass().add("subheading"); }},
-            passwordField,
+            createInputRow("mdi2s-server-network", "Server Host", hostField),
+            createInputRow("mdi2a-account", "Username", usernameField),
+            createInputRow("mdi2l-lock", "Password", passwordField),
             btnBox,
             statusLabel
         );
 
         centerBox.getChildren().addAll(headerBox, card);
         setCenter(centerBox);
+
+        // Entrance animations
+        new FadeIn(headerBox).setSpeed(0.5).play();
+        new SlideInUp(card).setSpeed(0.8).play();
+        new Pulse(title).setCycleCount(Animation.INDEFINITE).setSpeed(0.2).play();
+    }
+
+    private VBox createInputRow(String iconLiteral, String labelText, TextField field) {
+        HBox labelBox = new HBox(8);
+        labelBox.setAlignment(Pos.CENTER_LEFT);
+        FontIcon icon = new FontIcon(iconLiteral);
+        icon.setIconColor(javafx.scene.paint.Color.web("#8B949E"));
+        Label lbl = new Label(labelText);
+        lbl.getStyleClass().add("subheading");
+        labelBox.getChildren().addAll(icon, lbl);
+        
+        VBox row = new VBox(8, labelBox, field);
+        return row;
     }
 
     private void handleLogin() {
@@ -111,20 +141,20 @@ public class EditorialLogin extends BorderPane implements ServerConnection.Packe
         String u = usernameField.getText().trim();
         String p = passwordField.getText();
         if (h.isEmpty() || u.isEmpty() || p.isEmpty()) {
-            setStatus("Please fill all fields.");
+            setStatus("Please fill all fields.", "mdi2a-alert-circle");
             return;
         }
-        setStatus("Connecting...");
+        setStatus("Connecting...", "mdi2l-loading");
         setInputsEnabled(false);
         if (discovery != null) discovery.stopDiscovery();
         
         new Thread(() -> {
             if (connection.connect(h, 9090, this)) {
-                Platform.runLater(() -> setStatus("Authenticating..."));
+                Platform.runLater(() -> setStatus("Authenticating...", "mdi2l-loading"));
                 connection.send(new Packet(Packet.Type.LOGIN, new String[]{u, p}));
             } else {
                 Platform.runLater(() -> {
-                    setStatus("Connection failed.");
+                    setStatus("Connection failed.", "mdi2c-close-circle-outline");
                     setInputsEnabled(true);
                 });
             }
@@ -136,27 +166,28 @@ public class EditorialLogin extends BorderPane implements ServerConnection.Packe
         String u = usernameField.getText().trim();
         String p = passwordField.getText();
         if (h.isEmpty() || u.isEmpty() || p.isEmpty()) {
-            setStatus("Please fill all fields.");
+            setStatus("Please fill all fields.", "mdi2a-alert-circle");
             return;
         }
-        setStatus("Connecting...");
+        setStatus("Connecting...", "mdi2l-loading");
         setInputsEnabled(false);
 
         new Thread(() -> {
             if (connection.connect(h, 9090, this)) {
-                Platform.runLater(() -> setStatus("Registering..."));
+                Platform.runLater(() -> setStatus("Registering...", "mdi2l-loading"));
                 connection.send(new Packet(Packet.Type.REGISTER, new String[]{u, p}));
             } else {
                 Platform.runLater(() -> {
-                    setStatus("Connection failed.");
+                    setStatus("Connection failed.", "mdi2c-close-circle-outline");
                     setInputsEnabled(true);
                 });
             }
         }).start();
     }
 
-    private void setStatus(String msg) {
+    private void setStatus(String msg, String iconCode) {
         statusLabel.setText(msg);
+        statusLabel.setGraphic(new FontIcon(iconCode));
     }
 
     private void setInputsEnabled(boolean b) {
@@ -172,24 +203,22 @@ public class EditorialLogin extends BorderPane implements ServerConnection.Packe
         Platform.runLater(() -> {
             switch (packet.getType()) {
                 case LOGIN_SUCCESS -> {
-                    setStatus("Success! Loading...");
+                    setStatus("Success! Loading...", "mdi2c-check-circle-outline");
                     app.showMain((User) packet.getPayload());
                 }
                 case LOGIN_FAIL -> {
-                    setStatus("Login Failed: " + packet.getPayload());
+                    setStatus("Login Failed: " + packet.getPayload(), "mdi2c-close-circle-outline");
                     setInputsEnabled(true);
                 }
                 case REGISTER_SUCCESS -> {
-                    setStatus("Registered successfully. Please Login.");
+                    setStatus("Registered successfully. Please Login.", "mdi2c-check-circle-outline");
                     setInputsEnabled(true);
                 }
                 case ERROR -> {
-                    setStatus("Error: " + packet.getPayload());
+                    setStatus("Error: " + packet.getPayload(), "mdi2a-alert-circle");
                     setInputsEnabled(true);
                 }
-                default -> {
-                    // Ignore unrelated packets like NEW_POST on the login screen
-                }
+                default -> {}
             }
         });
     }
@@ -197,7 +226,7 @@ public class EditorialLogin extends BorderPane implements ServerConnection.Packe
     @Override
     public void onDisconnected() {
         Platform.runLater(() -> {
-            setStatus("Disconnected from server.");
+            setStatus("Disconnected from server.", "mdi2l-lan-disconnect");
             setInputsEnabled(true);
         });
     }

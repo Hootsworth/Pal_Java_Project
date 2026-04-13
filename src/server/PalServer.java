@@ -123,6 +123,50 @@ public class PalServer {
         broadcastToAll(new Packet(Packet.Type.FEED_RESPONSE, getGlobalFeed()));
     }
 
+    // ── Phase 4: Social Features ──
+
+    public void addReply(Post reply) {
+        synchronized (globalFeed) {
+            for (Post post : globalFeed) {
+                if (post.getPostId().equals(reply.getParentPostId())) {
+                    post.addReply(reply);
+                    break;
+                }
+            }
+        }
+        broadcastToAll(new Packet(Packet.Type.FEED_RESPONSE, getGlobalFeed()));
+    }
+
+    public void reportPost(String postId, String reporterUsername, String reason) {
+        synchronized (globalFeed) {
+            for (Post post : globalFeed) {
+                if (post.getPostId().equals(postId)) {
+                    if (post.reportBy(reporterUsername)) {
+                        System.out.println("[⚠️ REPORT] Post " + postId + " by " + reporterUsername + " (Reason: " + reason + ")");
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    public void sharePost(String postId, String sharerUsername) {
+        Post toShare = null;
+        synchronized (globalFeed) {
+            for (Post post : globalFeed) {
+                if (post.getPostId().equals(postId)) {
+                    post.incrementShareCount();
+                    toShare = post;
+                    break;
+                }
+            }
+        }
+        if (toShare != null) {
+            Post sharePost = new Post(sharerUsername, "Shared a post by " + toShare.getAuthor() + ":\n" + toShare.getContent());
+            addPost(sharePost);
+        }
+    }
+
     // ---- Friends ----
 
     public synchronized boolean sendFriendRequest(String from, String to) {

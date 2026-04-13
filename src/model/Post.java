@@ -34,6 +34,15 @@ public class Post implements Serializable, Comparable<Post> {
     private PostType type;
     private Map<String, String> metadata;
 
+    // Phase 4: Reply threading
+    private String parentPostId;  // null for top-level posts, set for replies
+    private List<Post> replies;   // client-side aggregated replies
+
+    // Phase 4: Report & Share
+    private int reportCount;
+    private Set<String> reportedBy;
+    private int shareCount;
+
     public Post(String author, String content) {
         this(author, content, PostType.SOCIAL);
     }
@@ -47,6 +56,10 @@ public class Post implements Serializable, Comparable<Post> {
         this.reactions = new HashMap<>();
         this.metadata = new HashMap<>();
         this.postId = UUID.randomUUID().toString().substring(0, 8);
+        this.replies = new ArrayList<>();
+        this.reportedBy = new HashSet<>();
+        this.reportCount = 0;
+        this.shareCount = 0;
     }
 
     // ── Basic Getters ──
@@ -124,6 +137,38 @@ public class Post implements Serializable, Comparable<Post> {
     public void setMetadata(String key, String value) {
         getMetadata().put(key, value);
     }
+
+    // ── Phase 4: Reply Threading ──
+    public String getParentPostId() { return parentPostId; }
+    public void setParentPostId(String parentPostId) { this.parentPostId = parentPostId; }
+
+    public List<Post> getReplies() {
+        if (replies == null) replies = new ArrayList<>();
+        return replies;
+    }
+    public void addReply(Post reply) {
+        getReplies().add(reply);
+    }
+
+    // ── Phase 4: Reporting ──
+    public int getReportCount() { return reportCount; }
+    public Set<String> getReportedBy() {
+        if (reportedBy == null) reportedBy = new HashSet<>();
+        return reportedBy;
+    }
+    public boolean reportBy(String username) {
+        if (getReportedBy().contains(username)) return false;
+        getReportedBy().add(username);
+        reportCount++;
+        return true;
+    }
+    public boolean hasReported(String username) {
+        return getReportedBy().contains(username);
+    }
+
+    // ── Phase 4: Sharing ──
+    public int getShareCount() { return shareCount; }
+    public void incrementShareCount() { shareCount++; }
 
     @Override
     public int compareTo(Post other) {

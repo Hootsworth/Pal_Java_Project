@@ -1,30 +1,33 @@
 #!/bin/bash
-# LAN Social Media - Build Script
-# Compiles all Java source files into the out/ directory
+echo "=== Pal Builder (JavaFX + AtlantaFX + Ikonli + AnimateFX) ==="
+echo ""
 
-echo "=== Pal Builder (JavaFX) ==="
-
-# Clean and create output directory
-rm -rf out
 mkdir -p out
 
-# Collect all .java files
-SOURCES=$(find src -name "*.java")
+JAVAFX_PATH="javafx-sdk/lib"
+LIBS="libs/atlantafx-base-2.0.1.jar:libs/ikonli-core-12.3.1.jar:libs/ikonli-javafx-12.3.1.jar:libs/ikonli-materialdesign2-pack-12.3.1.jar:libs/AnimateFX-1.3.0.jar"
 
-echo "Compiling sources..."
-javac -d out $SOURCES
+echo "Compiling all sources with JavaFX + Libraries..."
+javac -encoding UTF-8 --module-path "$JAVAFX_PATH" --add-modules javafx.controls,javafx.fxml,javafx.media -cp "$LIBS" -d out src/model/*.java src/server/*.java src/server/api/*.java src/client/*.java src/ui/*.java
+
+echo "Copying CSS assets..."
+cp src/ui/*.css out/
+
+echo "Copying library JARs to output..."
+mkdir -p out/libs
+cp libs/*.jar out/libs/
 
 if [ $? -eq 0 ]; then
     echo ""
-    echo "✅ Build successful!"
+    echo "BUILD SUCCESSFUL!"
     echo ""
-    echo "To run the SERVER, open a new terminal and type:"
+    echo "To run the SERVER:"
     echo "  cd out && java server.PalServer"
     echo ""
-    echo "To run the CLIENT, open another terminal and type:"
-    echo "  cd out && java --module-path ../javafx-sdk/lib --add-modules javafx.controls,javafx.fxml,javafx.media client.PalClient"
+    echo "To run the CLIENT:"
+    echo "  cd out && java --module-path '../javafx-sdk/lib' --add-modules javafx.controls,javafx.fxml,javafx.media -cp '.:libs/*' client.PalClient"
     echo ""
-    echo "Multiple clients can connect — just run the client command multiple times!"
 else
-    echo "❌ Build failed. Check errors above."
+    echo ""
+    echo "BUILD FAILED. Check the errors above."
 fi
