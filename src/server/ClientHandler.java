@@ -104,8 +104,21 @@ public class ClientHandler implements Runnable {
 
     // ── Auth ──
 
+    private String[] normalizeCreds(Object payload) {
+        if (!(payload instanceof String[] creds) || creds.length < 2) {
+            return null;
+        }
+        String username = creds[0] == null ? "" : creds[0].trim().toLowerCase();
+        String password = creds[1] == null ? "" : creds[1].trim();
+        return new String[]{username, password};
+    }
+
     private void handleLogin(Packet packet) {
-        String[] creds = (String[]) packet.getPayload();
+        String[] creds = normalizeCreds(packet.getPayload());
+        if (creds == null || creds[0].isEmpty() || creds[1].isEmpty()) {
+            send(new Packet(Packet.Type.LOGIN_FAIL, "Username and password are required"));
+            return;
+        }
         User user = server.authenticate(creds[0], creds[1]);
         if (user != null) {
             currentUser = user;
@@ -118,7 +131,11 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleRegister(Packet packet) {
-        String[] creds = (String[]) packet.getPayload();
+        String[] creds = normalizeCreds(packet.getPayload());
+        if (creds == null || creds[0].isEmpty() || creds[1].isEmpty()) {
+            send(new Packet(Packet.Type.REGISTER_FAIL, "Username and password are required"));
+            return;
+        }
         if (server.registerUser(creds[0], creds[1])) {
             send(new Packet(Packet.Type.REGISTER_SUCCESS, "Registered successfully!"));
         } else {

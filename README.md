@@ -52,11 +52,15 @@ The server listens on **port 9090**.
 
 ### Step 3 — Start the Client (any machine on the LAN)
 ```bash
-cd out
-java --module-path "../javafx-sdk/lib" --add-modules javafx.controls,javafx.fxml,javafx.media client.PalClient
+./launch-client.sh
 ```
 The App uses local network discovery, so the server IP will pop up automatically.
 Leave it blank to connect to `localhost` (same machine testing).
+
+On Windows, use:
+```bat
+launch-client.bat
+```
 
 ---
 

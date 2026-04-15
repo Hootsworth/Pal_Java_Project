@@ -26,6 +26,8 @@ public class EditorialLogin extends BorderPane implements ServerConnection.Packe
     private Label statusLabel;
     private Button loginBtn;
     private Button registerBtn;
+    private String pendingRegisterUsername;
+    private String pendingRegisterPassword;
     
     private DiscoveryClient discovery;
 
@@ -147,6 +149,12 @@ public class EditorialLogin extends BorderPane implements ServerConnection.Packe
         setStatus("Connecting...", "mdi2l-loading");
         setInputsEnabled(false);
         if (discovery != null) discovery.stopDiscovery();
+
+        if (connection.isConnected()) {
+            setStatus("Authenticating...", "mdi2l-loading");
+            connection.send(new Packet(Packet.Type.LOGIN, new String[]{u, p}));
+            return;
+        }
         
         new Thread(() -> {
             if (connection.connect(h, 9090, this)) {
@@ -171,6 +179,14 @@ public class EditorialLogin extends BorderPane implements ServerConnection.Packe
         }
         setStatus("Connecting...", "mdi2l-loading");
         setInputsEnabled(false);
+        pendingRegisterUsername = u;
+        pendingRegisterPassword = p;
+
+        if (connection.isConnected()) {
+            setStatus("Registering...", "mdi2l-loading");
+            connection.send(new Packet(Packet.Type.REGISTER, new String[]{u, p}));
+            return;
+        }
 
         new Thread(() -> {
             if (connection.connect(h, 9090, this)) {
@@ -211,8 +227,16 @@ public class EditorialLogin extends BorderPane implements ServerConnection.Packe
                     setInputsEnabled(true);
                 }
                 case REGISTER_SUCCESS -> {
-                    setStatus("Registered successfully. Please Login.", "mdi2c-check-circle-outline");
+                    setStatus("Registered. Logging in...", "mdi2l-loading");
+                    String ru = pendingRegisterUsername != null ? pendingRegisterUsername : usernameField.getText().trim();
+                    String rp = pendingRegisterPassword != null ? pendingRegisterPassword : passwordField.getText();
+                    connection.send(new Packet(Packet.Type.LOGIN, new String[]{ru, rp}));
+                }
+                case REGISTER_FAIL -> {
+                    setStatus("Register Failed: " + packet.getPayload(), "mdi2c-close-circle-outline");
                     setInputsEnabled(true);
+                    pendingRegisterUsername = null;
+                    pendingRegisterPassword = null;
                 }
                 case ERROR -> {
                     setStatus("Error: " + packet.getPayload(), "mdi2a-alert-circle");

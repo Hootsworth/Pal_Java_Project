@@ -236,6 +236,8 @@ public class PalServer {
         user.setBio(profile.getBio());
         user.setStatusEmoji(profile.getStatusEmoji());
         user.setStatusText(profile.getStatusText());
+        user.setAvatarStyle(profile.getAvatarStyle());
+        user.setAvatarSeed(profile.getAvatarSeed());
         System.out.println("[~] Profile updated for: " + username);
     }
 

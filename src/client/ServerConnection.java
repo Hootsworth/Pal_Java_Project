@@ -15,11 +15,18 @@ public class ServerConnection {
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private volatile PacketListener listener;
-    private boolean connected = false;
+    private volatile boolean connected = false;
 
     public interface PacketListener {
         void onPacketReceived(Packet packet);
         void onDisconnected();
+    }
+
+    private void notifyDisconnected() {
+        PacketListener current = listener;
+        if (current != null) {
+            current.onDisconnected();
+        }
     }
 
     /** Allows swapping the listener (e.g. from LoginFrame to MainFrame). */
@@ -27,8 +34,14 @@ public class ServerConnection {
         this.listener = listener;
     }
 
-    public boolean connect(String host, int port, PacketListener listener) {
+    public synchronized boolean connect(String host, int port, PacketListener listener) {
         this.listener = listener;
+        if (socket != null && socket.isConnected() && !socket.isClosed()) {
+            connected = true;
+            return true;
+        }
+        // Ensure stale streams/sockets are closed before opening a fresh connection.
+        disconnect();
         try {
             socket = new Socket(host, port);
             out = new ObjectOutputStream(socket.getOutputStream());
@@ -37,26 +50,43 @@ public class ServerConnection {
             startListening();
             return true;
         } catch (IOException e) {
+            connected = false;
             System.err.println("Connection failed: " + e.getMessage());
             return false;
         }
     }
 
     private void startListening() {
+        final Socket activeSocket = socket;
+        final ObjectInputStream activeIn = in;
         Thread t = new Thread(() -> {
             try {
                 Packet packet;
-                while ((packet = (Packet) in.readObject()) != null) {
-                    listener.onPacketReceived(packet);
+                while ((packet = (Packet) activeIn.readObject()) != null) {
+                    PacketListener current = listener;
+                    if (current != null) {
+                        current.onPacketReceived(packet);
+                    }
                 }
             } catch (EOFException | SocketException e) {
-                listener.onDisconnected();
+                if (activeSocket == socket) {
+                    notifyDisconnected();
+                }
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println("Listener error: " + e.getMessage());
-                listener.onDisconnected();
+                if (activeSocket == socket) {
+                    notifyDisconnected();
+                }
+            } finally {
+                synchronized (this) {
+                    if (activeSocket == socket) {
+                        connected = false;
+                    }
+                }
             }
         });
         t.setDaemon(true);
+        t.setName("Pal-Client-Listener");
         t.start();
     }
 
@@ -71,9 +101,14 @@ public class ServerConnection {
         }
     }
 
-    public void disconnect() {
+    public synchronized void disconnect() {
         connected = false;
+        try { if (in != null) in.close(); } catch (IOException ignored) {}
+        try { if (out != null) out.close(); } catch (IOException ignored) {}
         try { if (socket != null) socket.close(); } catch (IOException ignored) {}
+        in = null;
+        out = null;
+        socket = null;
     }
 
     public boolean isConnected() { return connected; }

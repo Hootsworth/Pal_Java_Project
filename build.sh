@@ -25,7 +25,7 @@ if [ $? -eq 0 ]; then
     echo "  cd out && java server.PalServer"
     echo ""
     echo "To run the CLIENT:"
-    echo "  cd out && java --module-path '../javafx-sdk/lib' --add-modules javafx.controls,javafx.fxml,javafx.media -cp '.:libs/*' client.PalClient"
+    echo "  ./launch-client.sh"
     echo ""
 else
     echo ""

@@ -18,6 +18,8 @@ public class UserProfile implements Serializable {
     private int postCount;
     private int friendCount;
     private boolean online;
+    private String avatarStyle;
+    private String avatarSeed;
 
     public UserProfile(User user, boolean online) {
         this.username = user.getUsername();
@@ -28,6 +30,21 @@ public class UserProfile implements Serializable {
         this.postCount = user.getPostCount();
         this.friendCount = user.getFriends().size();
         this.online = online;
+        this.avatarStyle = user.getAvatarStyle();
+        this.avatarSeed = user.getAvatarSeed();
+    }
+
+    public UserProfile(String username) {
+        this.username = username;
+        this.bio = "";
+        this.statusEmoji = "";
+        this.statusText = "";
+        this.joinedTimestamp = System.currentTimeMillis();
+        this.postCount = 0;
+        this.friendCount = 0;
+        this.online = true;
+        this.avatarStyle = "bottts";
+        this.avatarSeed = username;
     }
 
     // ── Getters ──
@@ -39,6 +56,19 @@ public class UserProfile implements Serializable {
     public int getPostCount() { return postCount; }
     public int getFriendCount() { return friendCount; }
     public boolean isOnline() { return online; }
+    public String getAvatarStyle() { return avatarStyle != null && !avatarStyle.isBlank() ? avatarStyle : "bottts"; }
+    public String getAvatarSeed() { return avatarSeed != null && !avatarSeed.isBlank() ? avatarSeed : username; }
+
+    // ── Setters for profile edits sent from client ──
+    public void setBio(String bio) { this.bio = bio != null ? bio : ""; }
+    public void setStatusEmoji(String statusEmoji) { this.statusEmoji = statusEmoji != null ? statusEmoji : ""; }
+    public void setStatusText(String statusText) { this.statusText = statusText != null ? statusText : ""; }
+    public void setAvatarStyle(String avatarStyle) {
+        this.avatarStyle = (avatarStyle == null || avatarStyle.isBlank()) ? "bottts" : avatarStyle;
+    }
+    public void setAvatarSeed(String avatarSeed) {
+        this.avatarSeed = (avatarSeed == null || avatarSeed.isBlank()) ? username : avatarSeed;
+    }
 
     /** Returns combined display status. */
     public String getDisplayStatus() {

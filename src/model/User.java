@@ -10,7 +10,7 @@ import java.util.List;
  * Enhanced in Phase 2 with status, avatar, and profile fields.
  */
 public class User implements Serializable {
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 3L;
 
     private String username;
     private String password;
@@ -26,6 +26,10 @@ public class User implements Serializable {
     private long joinedTimestamp;
     private int postCount;
 
+    // Phase 5: DiceBear avatar identity
+    private String avatarStyle;
+    private String avatarSeed;
+
     public User(String username, String password) {
         this.username = username;
         this.password = password;
@@ -36,6 +40,8 @@ public class User implements Serializable {
         this.statusText = "";
         this.joinedTimestamp = System.currentTimeMillis();
         this.postCount = 0;
+        this.avatarStyle = "bottts";
+        this.avatarSeed = username;
     }
 
     // ── Basic Getters ──
@@ -84,6 +90,17 @@ public class User implements Serializable {
     public long getJoinedTimestamp() { return joinedTimestamp; }
     public int getPostCount() { return postCount; }
     public void incrementPostCount() { postCount++; }
+
+    // ── Phase 5: Avatar metadata ──
+    public String getAvatarStyle() { return avatarStyle != null && !avatarStyle.isBlank() ? avatarStyle : "bottts"; }
+    public void setAvatarStyle(String avatarStyle) {
+        this.avatarStyle = (avatarStyle == null || avatarStyle.isBlank()) ? "bottts" : avatarStyle;
+    }
+
+    public String getAvatarSeed() { return avatarSeed != null && !avatarSeed.isBlank() ? avatarSeed : username; }
+    public void setAvatarSeed(String avatarSeed) {
+        this.avatarSeed = (avatarSeed == null || avatarSeed.isBlank()) ? username : avatarSeed;
+    }
 
     @Override
     public String toString() {

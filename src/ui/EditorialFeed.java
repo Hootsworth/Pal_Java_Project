@@ -5,6 +5,7 @@ import animatefx.animation.FadeInUp;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
@@ -12,26 +13,33 @@ import javafx.scene.paint.Color;
 import model.Packet;
 import model.Post;
 import model.User;
+import model.UserProfile;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 public class EditorialFeed extends VBox {
 
     private final ServerConnection connection;
     private final ServerConnection.PacketListener mainListener;
     private final User user;
+    private final Function<String, UserProfile> profileResolver;
     private final VBox feedContainer;
     private final TextArea composer;
     private Post.PostType currentFilter = null; // null means All
     private List<Post> allPostsCache = new java.util.ArrayList<>();
 
-    public EditorialFeed(User user, ServerConnection connection, ServerConnection.PacketListener mainListener) {
+    public EditorialFeed(User user,
+                         ServerConnection connection,
+                         ServerConnection.PacketListener mainListener,
+                         Function<String, UserProfile> profileResolver) {
         this.user = user;
         this.connection = connection;
         this.mainListener = mainListener;
+        this.profileResolver = profileResolver;
         setSpacing(24);
 
         Label title = new Label("Feed");
@@ -43,9 +51,7 @@ public class EditorialFeed extends VBox {
         
         HBox composeHeader = new HBox(10);
         composeHeader.setAlignment(Pos.CENTER_LEFT);
-        FontIcon userIcon = new FontIcon("mdi2a-account-circle");
-        userIcon.setIconSize(24);
-        userIcon.setIconColor(Color.web("#8B949E"));
+        ImageView userIcon = AvatarFactory.createCircularAvatar(profileFor(user.getUsername()), 28);
         Label composeTitle = new Label("Create Post");
         composeTitle.getStyleClass().add("subheading");
         composeHeader.getChildren().addAll(userIcon, composeTitle);
@@ -183,8 +189,7 @@ public class EditorialFeed extends VBox {
         HBox header = new HBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
         
-        FontIcon pIcon = new FontIcon("mdi2a-account-circle");
-        pIcon.setIconColor(Color.web("#58A6FF"));
+        ImageView pIcon = AvatarFactory.createCircularAvatar(profileFor(p.getAuthor()), 28);
         
         Label author = new Label(p.getAuthor());
         author.setStyle("-fx-font-weight: bold; -fx-text-fill: white;");
@@ -323,6 +328,11 @@ public class EditorialFeed extends VBox {
         card.getChildren().addAll(actionBar, replyBox);
 
         return card;
+    }
+
+    private UserProfile profileFor(String username) {
+        UserProfile profile = profileResolver.apply(username);
+        return profile != null ? profile : new UserProfile(username);
     }
 
     private Button createPlayButton(String url) {

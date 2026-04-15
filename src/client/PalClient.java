@@ -6,7 +6,7 @@ import javafx.stage.Stage;
 import model.User;
 import ui.EditorialLogin;
 import ui.EditorialMain;
-import atlantafx.base.theme.PrimerDark;
+import atlantafx.base.theme.PrimerLight;
 
 public class PalClient extends Application {
 
@@ -17,8 +17,8 @@ public class PalClient extends Application {
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
         this.connection = new ServerConnection();
-        // Apply AtlantaFX PrimerDark theme
-        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+        // Apply a light baseline, then override with custom black/white journal styling.
+        Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
 
         primaryStage.setTitle("Pal — The Editorial Experience");
         primaryStage.setWidth(1200);
